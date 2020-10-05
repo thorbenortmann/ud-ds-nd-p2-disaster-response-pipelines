@@ -2,20 +2,17 @@ import sys
 from typing import List, Tuple
 
 import joblib
-from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 import pandas as pd
 from pandas import DataFrame, Series
 from sqlalchemy import create_engine
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import FeatureUnion, Pipeline
+from sklearn.pipeline import Pipeline
 
 import nltk
 nltk.download(['punkt', 'stopwords', 'wordnet'])
@@ -27,14 +24,16 @@ def load_data(database_filepath: str) -> Tuple[Series, DataFrame, List[str]]:
     table_name = db_name[0:-3]
     df = pd.read_sql_table(table_name, engine)
 
-    X = df['message'].head(1000)
+    X = df['message']
     category_names = df.columns[4:]
-    Y = df[category_names].head(1000)
+    Y = df[category_names]
 
     return X, Y, category_names
 
 
 def tokenize(text: str) -> List[str]:
+    # the following import has to happen here to be able to fit GridSearchCV in parallel.
+    from nltk.corpus import stopwords
     tokens = word_tokenize(text)
 
     # lemmatize, to lower and whitespace removal
@@ -56,10 +55,10 @@ def build_model() -> GridSearchCV:
 
     parameters = {
         'vect__ngram_range': ((1, 1), (1, 2)),
-        'clf__estimator__n_estimators': (5, 10)
+        'clf__estimator__n_estimators': (50, 100)
     }
 
-    cv = GridSearchCV(pipeline, param_grid=parameters, verbose=1)
+    cv = GridSearchCV(pipeline, param_grid=parameters, n_jobs=-2, verbose=1)
     return cv
 
 
@@ -67,6 +66,9 @@ def evaluate_model(model: GridSearchCV, X_test: Series, Y_test: DataFrame, categ
     Y_pred = model.predict(X_test)
     cp = classification_report(Y_test.values, Y_pred, target_names=category_names)
     print("Classification Report:\n", cp)
+
+    accuracy = (Y_pred == Y_test).mean()
+    print("\naverage Accuracy:\n", accuracy.mean())
 
 
 def save_model(model: GridSearchCV, model_filepath: str) -> None:
