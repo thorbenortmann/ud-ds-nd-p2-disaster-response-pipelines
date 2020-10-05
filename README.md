@@ -61,7 +61,7 @@ The web app is defined in in the `src/app` folder and can be started from
 Besides data visualization, you can also enter message texts
 and get the classification results of the trained classifier model back.
 
-##Results
+## Results
 The best combination of transformers and classifiers I could find is a
 `TfidfVectorizer` using unigrams and bigrams
 followed by a (multioutput) `RandomForestClassifier` with 100 trees.
