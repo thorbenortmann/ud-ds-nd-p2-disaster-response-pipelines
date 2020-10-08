@@ -15,7 +15,8 @@ The code should run with no issues using python versions >=3.6.
 `venv\Scripts\activate.bat`(for Windows) or `source venv/bin/activate` (for Unix and MacOS)
 3. Install all required packages listed in the `requirements.txt` file:  
 `pip install -r requirements.txt`
-
+4. Download `nltk` `punkt`, `stopwords` and `wordnet`:  
+`python -c "import nltk; nltk.download(['stopwords', 'punkt', 'wordnet'])"`
 ### Create Database
 To run the ETL pipeline that takes and cleans data from
 `src/data/disaster_messages.csv`and `src/data/disaster_categories.csv` and stores it in a sqlite database
@@ -33,7 +34,7 @@ To run the flask web app run:
 `cd src/app`  
 `python run.py`  
 and go to:
-`http://0.0.0.0:3001/` in your browser.
+`http://localhost:3001/` in your browser.
 
 ## Project Motivation and File Descriptions
 For this project I was interested in classifying messages

@@ -14,9 +14,6 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
 
-import nltk
-nltk.download(['punkt', 'stopwords', 'wordnet'])
-
 
 def load_data(database_filepath: str) -> Tuple[Series, DataFrame, List[str]]:
     engine = create_engine(f'sqlite:///{database_filepath}')
