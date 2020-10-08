@@ -1,3 +1,9 @@
+"""
+Module/script that trains a classifier
+based on data in a given database
+and stores it at a given path.
+"""
+
 import sys
 from typing import List, Tuple
 
@@ -16,6 +22,14 @@ from sklearn.pipeline import Pipeline
 
 
 def load_data(database_filepath: str) -> Tuple[Series, DataFrame, List[str]]:
+    """
+    Loads the data from the given db and returns it as a triple of:
+        - source column (X)
+        - target columns (Y)
+        - target labels
+    :param database_filepath: path to the db to load the data from
+    :return: source column, target columns, target labels.
+    """
     engine = create_engine(f'sqlite:///{database_filepath}')
     db_name = database_filepath.split("/")[-1]
     table_name = db_name[0:-3]
@@ -29,6 +43,17 @@ def load_data(database_filepath: str) -> Tuple[Series, DataFrame, List[str]]:
 
 
 def tokenize(text: str) -> List[str]:
+    """
+    Processes the given text into tokens (words). Applied steps are:
+        - (word) tokenization
+        - lemmatization
+        - to lower case
+        - whitespace removal
+        - stopword removal
+        - punctuation removal
+    :param text: string to be tokenized.
+    :return: a list of the created tokens.
+    """
     # the following import has to happen here to be able to fit GridSearchCV in parallel.
     from nltk.corpus import stopwords
     tokens = word_tokenize(text)
@@ -45,6 +70,12 @@ def tokenize(text: str) -> List[str]:
 
 
 def build_model() -> GridSearchCV:
+    """
+    Creates a GridSearchCV object based on a Pipeline, which combines
+    vectorization and classification algorithms to classify given text inputs
+    into many target classes.
+    :return: the described GridSearchCV object
+    """
     pipeline = Pipeline([
         ('vect', TfidfVectorizer(tokenizer=tokenize)),
         ('clf', MultiOutputClassifier(RandomForestClassifier()))
@@ -60,6 +91,15 @@ def build_model() -> GridSearchCV:
 
 
 def evaluate_model(model: GridSearchCV, X_test: Series, Y_test: DataFrame, category_names: List[str]) -> None:
+    """
+    Evaluates the given model on a (test) data set it was not trained on by computing
+    Precision, Recall, F1-Score and Accuracy for each category.
+    :param model: model to be evaluated
+    :param X_test: test source data to be classified by the model
+    :param Y_test: test target data; the expected labels
+    :param category_names: names of the target labels
+    :return: None; evaluation results are printed.
+    """
     Y_pred = model.predict(X_test)
     cp = classification_report(Y_test.values, Y_pred, target_names=category_names)
     print("Classification Report:\n", cp)
@@ -69,11 +109,25 @@ def evaluate_model(model: GridSearchCV, X_test: Series, Y_test: DataFrame, categ
 
 
 def save_model(model: GridSearchCV, model_filepath: str) -> None:
+    """
+    Saves the best estimator of the given model to the given file path using joblib.
+    :param model: GridSearchCV object that contains the best estimator to store
+    :param model_filepath: path to store the best estimator to
+    :return: None
+    """
     print(f'Found the following parameters to be the best:\n{model.best_params_}')
     joblib.dump(model.best_estimator_, model_filepath)
 
 
-def main():
+def main() -> None:
+    """
+    Main method of the module/script which uses the given sys.argv to determine the location
+    of the input db and the location of the file to store the trained classifier to.
+    If any of those two additional arguments are not given, the main method will only print an error message.
+    If all arguments are given, the data from the db is used to train a classifier, that is
+    then stored at the specified location.
+    :return: None
+    """
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
